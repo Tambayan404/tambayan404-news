@@ -1,0 +1,36 @@
+---
+import { env } from 'cloudflare:workers';
+import Layout from '../layouts/Layout.astro';
+import { recentDays } from '../lib/db';
+import { dayOf, humanDay } from '../lib/time';
+
+export const prerender = false;
+
+const tz = env.SITE_TZ || 'UTC';
+const today = dayOf(new Date(), tz);
+const days = await recentDays(env.DB, 60);
+Astro.response.headers.set('Cache-Control', 'public, max-age=120, s-maxage=300');
+---
+<Layout title="Past days">
+  <h1>Past days</h1>
+  {days.length === 0 ? (
+    <p class="empty">No links collected yet.</p>
+  ) : (
+    <ul class="days">
+      {days.map(({ day, count }) => (
+        <li>
+          <a href={day === today ? '/' : `/day/${day}`}>{humanDay(day, tz)}</a>
+          <span class="count">{count} link{count === 1 ? '' : 's'}</span>
+        </li>
+      ))}
+    </ul>
+  )}
+</Layout>
+
+<style>
+  h1 { font-size: 18px; font-weight: 650; margin: 18px 0 10px; }
+  .days { list-style: none; margin: 0; padding: 0; }
+  .days li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--rule); }
+  .count { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .empty { color: var(--muted); }
+</style>

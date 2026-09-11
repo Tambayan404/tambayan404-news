@@ -1,0 +1,27 @@
+---
+import type { LinkRow } from '../lib/db';
+import LinkRow_ from './LinkRow.astro';
+
+interface Props {
+  links: LinkRow[];
+  emptyHint?: string;
+  latestDay?: string | null;
+}
+const { links, emptyHint = 'Nothing shared yet.', latestDay = null } = Astro.props;
+---
+{links.length === 0 ? (
+  <p class="empty">
+    {emptyHint}
+    {latestDay && <> Try the <a href={`/day/${latestDay}`}>most recent day with links</a>.</>}
+  </p>
+) : (
+  <ol class="links">
+    {links.map((link, i) => <LinkRow_ link={link} rank={i + 1} />)}
+  </ol>
+)}
+
+<style>
+  .links { list-style: none; margin: 0; padding: 0; }
+  .empty { color: var(--muted); padding: 24px 0; }
+  .empty a { color: var(--accent); }
+</style>

@@ -1,0 +1,20 @@
+---
+import { env } from 'cloudflare:workers';
+import Layout from '../layouts/Layout.astro';
+import DayNav from '../components/DayNav.astro';
+import LinkList from '../components/LinkList.astro';
+import { adjacentDays, latestDay, linksForDay } from '../lib/db';
+import { dayOf } from '../lib/time';
+
+export const prerender = false;
+
+const tz = env.SITE_TZ || 'UTC';
+const today = dayOf(new Date(), tz);
+const [links, nav, latest] = await Promise.all([linksForDay(env.DB, today), adjacentDays(env.DB, today), latestDay(env.DB)]);
+
+Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
+---
+<Layout>
+  <DayNav day={today} prev={nav.prev} next={nav.next} isToday={true} count={links.length} />
+  <LinkList links={links} emptyHint="No links shared yet today." latestDay={latest !== today ? latest : null} />
+</Layout>

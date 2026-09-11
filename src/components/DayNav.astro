@@ -1,0 +1,44 @@
+---
+import { humanDay } from '../lib/time';
+import { env } from 'cloudflare:workers';
+
+interface Props {
+  day: string;
+  prev: string | null;
+  next: string | null;
+  isToday: boolean;
+  count: number;
+}
+const { day, prev, next, isToday, count } = Astro.props;
+const tz = env.SITE_TZ || 'UTC';
+---
+<div class="daynav">
+  <div class="left">
+    <h1>{humanDay(day, tz)}{isToday && <span class="today">today</span>}</h1>
+    <span class="count">{count} link{count === 1 ? '' : 's'}</span>
+  </div>
+  <div class="right">
+    {prev ? <a href={`/day/${prev}`} rel="prev">‹ {prev}</a> : <span class="dim">‹ earlier</span>}
+    <span class="sep">·</span>
+    {next ? <a href={next === undefined ? '/' : `/day/${next}`} rel="next">{next} ›</a> : <span class="dim">later ›</span>}
+  </div>
+</div>
+
+<style>
+  .daynav {
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+    gap: 8px 16px; margin: 18px 0 10px;
+  }
+  h1 { margin: 0; font-size: 18px; font-weight: 650; display: inline; }
+  .today {
+    margin-left: 8px; padding: 1px 7px; border-radius: 999px;
+    background: var(--pill); color: var(--pill-fg);
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+    vertical-align: middle;
+  }
+  .count { margin-left: 10px; color: var(--muted); font-size: 13px; }
+  .right { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .right a { color: var(--fg); }
+  .dim { color: var(--faint); }
+  .sep { margin: 0 6px; }
+</style>
