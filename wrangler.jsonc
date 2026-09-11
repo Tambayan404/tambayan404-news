@@ -36,6 +36,7 @@
 		"SKIP_BOT_AUTHORS": "true"
 	}
 	// Secrets (set with `wrangler secret put <NAME>`, or `.dev.vars` locally):
+	//   DISCORD_GUILD_ID   - the server to read from
 	//   DISCORD_BOT_TOKEN  - bot token with View Channels + Read Message History
 	//   INGEST_SECRET      - shared secret for manually triggering POST /api/ingest
 }

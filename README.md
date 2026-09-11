@@ -46,11 +46,12 @@ pnpm wrangler login
 pnpm wrangler d1 create t404-news        # paste the printed database_id into wrangler.jsonc
 ```
 
-Edit `wrangler.jsonc`: set `database_id` and `DISCORD_GUILD_ID`.
+Edit `wrangler.jsonc`: set `database_id`.
 
 ```sh
+pnpm wrangler secret put DISCORD_GUILD_ID   # the server id from step 1
 pnpm wrangler secret put DISCORD_BOT_TOKEN
-pnpm wrangler secret put INGEST_SECRET   # any random string; guards POST /api/ingest
+pnpm wrangler secret put INGEST_SECRET      # any random string; guards POST /api/ingest
 pnpm db:migrate:remote
 pnpm run deploy   # "run" is required: pnpm has a built-in "deploy" command
 ```
@@ -68,7 +69,7 @@ If `budgetExhausted` is true, just call it again; each call continues from where
 ### 3. Local development
 
 ```sh
-cp .dev.vars.example .dev.vars   # fill in DISCORD_BOT_TOKEN and INGEST_SECRET
+cp .dev.vars.example .dev.vars   # fill in all three values
 pnpm db:migrate:local
 pnpm dev                      # http://localhost:4321
 curl -X POST -H "Content-Type: application/json" \
@@ -90,12 +91,25 @@ Local D1 state lives in `.wrangler/state/` (gitignored) and is shared by both de
 |---|---|---|
 | `SITE_NAME` | Tambayan 404 News | Header / page titles |
 | `SITE_TZ` | Asia/Manila | Timezone used to decide which day a link belongs to |
-| `DISCORD_GUILD_ID` | — | The server to read from |
 | `LOOKBACK_HOURS` | 72 | How far back each run re-reads messages (also how long reaction counts keep updating) |
 | `SUBREQUEST_BUDGET` | 40 | Max outbound requests per cron run; keep under 50 on the free plan, can go to ~900 on paid |
 | `SKIP_BOT_AUTHORS` | true | Ignore links posted by bots/webhooks |
 
 Cron cadence is in `triggers.crons` (default every 5 minutes).
+
+## Secrets
+
+These are not in `wrangler.jsonc`. Set them with `pnpm wrangler secret put <NAME>` for the deployed
+worker, and in `.dev.vars` (gitignored, copied from `.dev.vars.example`) for local dev.
+
+| Secret | Meaning |
+|---|---|
+| `DISCORD_GUILD_ID` | The server to read from. Not sensitive, but kept out of the repo so it isn't named publicly |
+| `DISCORD_BOT_TOKEN` | Bot token with View Channels + Read Message History |
+| `INGEST_SECRET` | Shared secret guarding `POST /api/ingest` |
+
+`wrangler types` generates `worker-configuration.d.ts` from `wrangler.jsonc` plus `.dev.vars`, so
+`pnpm build` needs `.dev.vars` to exist locally — the example file carries the key names for that.
 
 ## Project layout
 
