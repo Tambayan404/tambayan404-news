@@ -15,7 +15,10 @@
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "astro": "astro",
     "dev:worker": "pnpm build && wrangler dev --test-scheduled",
-    "cron:local": "curl -s http://localhost:8787/cdn-cgi/handler/scheduled"
+    "cron:local": "curl -s http://localhost:8787/cdn-cgi/handler/scheduled",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.1",
@@ -25,7 +28,14 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@types/node": "^22.20.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
+    "prettier": "^3.9.6",
+    "prettier-plugin-astro": "^1.0.0",
     "typescript": "^6.0.3"
   },
-  "packageManager": "pnpm@12.4.1"
+  "packageManager": "pnpm@12.4.1",
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs,astro,json,jsonc,md,css}": "prettier --write"
+  }
 }
