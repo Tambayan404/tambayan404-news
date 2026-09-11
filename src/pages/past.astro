@@ -19,7 +19,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=120, s-maxage=300')
     <ul class="days">
       {days.map(({ day, count }) => (
         <li>
-          <a href={day === today ? '/' : `/day/${day}`}>{humanDay(day, tz)}</a>
+          <a href={`/day/${day}`}>{humanDay(day, tz)}</a>
           <span class="count">{count} link{count === 1 ? '' : 's'}</span>
         </li>
       ))}

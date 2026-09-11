@@ -1,106 +1,212 @@
 ---
-import { env } from 'cloudflare:workers';
+import { env } from "cloudflare:workers";
 
 interface Props {
-  title?: string;
-  description?: string;
+    title?: string;
+    description?: string;
 }
-const siteName = env.SITE_NAME || 'Tambayan 404 News';
-const { title, description = `Links shared on the ${siteName.replace(/ News$/, '')} Discord, one day at a time.` } = Astro.props;
+const siteName = env.SITE_NAME || "Tambayan 404 News";
+const {
+    title,
+    description = `Links shared on the ${siteName.replace(/ News$/, "")} Discord, one day at a time.`,
+} = Astro.props;
 const fullTitle = title ? `${title} · ${siteName}` : siteName;
 ---
+
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content={description} />
-    <meta name="color-scheme" content="light dark" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <title>{fullTitle}</title>
-  </head>
-  <body>
-    <header class="top">
-      <a class="brand" href="/">
-        <span class="logo">404</span>
-        <b>{siteName}</b>
-      </a>
-      <nav>
-        <a href="/past">past</a>
-      </nav>
-    </header>
-    <main>
-      <slot />
-    </main>
-    <footer>
-      <span>Links are collected automatically from the Discord server. Reactions are emoji reaction counts on the original message.</span>
-    </footer>
-  </body>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content={description} />
+        <meta name="color-scheme" content="light dark" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link
+            rel="alternate"
+            type="application/rss+xml"
+            title={siteName}
+            href="/rss"
+        />
+        <title>{fullTitle}</title>
+        <script is:inline>
+            // Apply the #doomscrolling preference before first paint to avoid a flash of hidden rows.
+            try {
+                if (localStorage.getItem("showDoomscrolling") === "0")
+                    document.documentElement.classList.add(
+                        "hide-doomscrolling",
+                    );
+            } catch {}
+        </script>
+    </head>
+    <body>
+        <header class="top">
+            <div class="left">
+                <a class="brand" href="/">
+                    <span class="logo">404</span>
+                    <b>{siteName}</b>
+                </a>
+                <label class="toggle">
+                    <input type="checkbox" id="toggle-doomscrolling" checked />
+                    toggle #doomscrolling
+                </label>
+            </div>
+            <nav>
+                <a href="/past">past</a>
+                <a href="/rss">rss</a>
+            </nav>
+        </header>
+        <main>
+            <slot />
+        </main>
+        <footer>
+            <span>Made by the Tambayan 404 Tanods</span>
+        </footer>
+        <script>
+            const box = document.getElementById(
+                "toggle-doomscrolling",
+            ) as HTMLInputElement | null;
+            if (box) {
+                const root = document.documentElement;
+                box.checked = !root.classList.contains("hide-doomscrolling");
+                box.addEventListener("change", () => {
+                    root.classList.toggle("hide-doomscrolling", !box.checked);
+                    try {
+                        localStorage.setItem(
+                            "showDoomscrolling",
+                            box.checked ? "1" : "0",
+                        );
+                    } catch {}
+                });
+            }
+        </script>
+    </body>
 </html>
 
 <style is:global>
-  :root {
-    color-scheme: light dark;
-    --bg: #f6f6ef;
-    --panel: #ffffff;
-    --fg: #1a1a1a;
-    --muted: #6b6b6b;
-    --faint: #9a9a9a;
-    --accent: #5865f2; /* discord blurple, fits the source */
-    --accent-fg: #ffffff;
-    --rule: #e6e6dc;
-    --pill: #ececf9;
-    --pill-fg: #3b44b8;
-  }
-  @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #141416;
-      --panel: #1c1c20;
-      --fg: #ebebeb;
-      --muted: #a2a2a8;
-      --faint: #6f6f78;
-      --accent: #7c86ff;
-      --accent-fg: #0f0f14;
-      --rule: #2a2a30;
-      --pill: #262a4a;
-      --pill-fg: #b8bfff;
+        color-scheme: light dark;
+        --bg: #f6f6ef;
+        --panel: #ffffff;
+        --fg: #1a1a1a;
+        --muted: #6b6b6b;
+        --faint: #9a9a9a;
+        --accent: #5865f2; /* discord blurple, fits the source */
+        --accent-fg: #ffffff;
+        --rule: #e6e6dc;
+        --pill: #ececf9;
+        --pill-fg: #3b44b8;
     }
-  }
-  * { box-sizing: border-box; }
-  html { background: var(--bg); }
-  body {
-    margin: 0;
-    padding: 0 16px 48px;
-    color: var(--fg);
-    background: var(--bg);
-    font: 15px/1.45 ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
-  }
-  a { color: inherit; text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  header.top {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 10px 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    border-bottom: 2px solid var(--accent);
-  }
-  .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 16px; }
-  .brand:hover { text-decoration: none; }
-  .logo {
-    display: inline-grid; place-items: center;
-    width: 30px; height: 30px; border-radius: 6px;
-    background: var(--accent); color: var(--accent-fg);
-    font-weight: 700; font-size: 11px; letter-spacing: .02em;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  }
-  header.top nav a { color: var(--muted); font-size: 14px; }
-  main { max-width: 860px; margin: 0 auto; }
-  footer {
-    max-width: 860px; margin: 32px auto 0; padding-top: 12px;
-    border-top: 1px solid var(--rule);
-    color: var(--faint); font-size: 12px;
-  }
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #141416;
+            --panel: #1c1c20;
+            --fg: #ebebeb;
+            --muted: #a2a2a8;
+            --faint: #6f6f78;
+            --accent: #7c86ff;
+            --accent-fg: #0f0f14;
+            --rule: #2a2a30;
+            --pill: #262a4a;
+            --pill-fg: #b8bfff;
+        }
+    }
+    * {
+        box-sizing: border-box;
+    }
+    html {
+        background: var(--bg);
+    }
+    body {
+        margin: 0;
+        padding: 0 16px 48px;
+        color: var(--fg);
+        background: var(--bg);
+        font:
+            15px/1.45 ui-sans-serif,
+            -apple-system,
+            "Segoe UI",
+            Helvetica,
+            Arial,
+            sans-serif;
+    }
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+    header.top {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 10px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        border-bottom: 2px solid var(--accent);
+    }
+    .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+    }
+    .brand:hover {
+        text-decoration: none;
+    }
+    .logo {
+        display: inline-grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        background: var(--accent);
+        color: var(--accent-fg);
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: 0.02em;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    header.top .left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    header.top nav {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    header.top nav a {
+        color: var(--muted);
+        font-size: 14px;
+    }
+    header.top .toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--muted);
+        font-size: 13px;
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+    }
+    header.top .toggle input {
+        margin: 0;
+        accent-color: var(--accent);
+    }
+    main {
+        max-width: 860px;
+        margin: 0 auto;
+    }
+    footer {
+        max-width: 860px;
+        margin: 32px auto 0;
+        padding-top: 12px;
+        border-top: 1px solid var(--rule);
+        color: var(--faint);
+        font-size: 12px;
+    }
 </style>

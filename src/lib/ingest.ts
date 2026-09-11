@@ -6,8 +6,8 @@
  * cursor, and stops cleanly when the budget is spent. The next run picks up where it left off.
  * Messages within LOOKBACK_HOURS are re-fetched each pass so reaction counts stay fresh.
  */
-import { BudgetExhausted, ChannelType, DiscordClient, displayName, snowflakeFromTime, type DiscordChannel, type DiscordMessage } from './discord';
-import { extractLinks } from './links';
+import { BudgetExhausted, ChannelType, DiscordClient, displayName, snowflakeFromTime, type DiscordChannel, type DiscordEmbed, type DiscordMessage } from './discord';
+import { extractLinks, type ExtractedLink } from './links';
 import { fetchTitle } from './title';
 import { dayOf } from './time';
 import { getState, linksMissingTitle, setStateStatement, setTitleStatement, upsertStatement, type UpsertLink } from './db';
@@ -39,11 +39,67 @@ function reactionTotal(m: DiscordMessage): number {
   return (m.reactions ?? []).reduce((n, r) => n + (r.count ?? 0), 0);
 }
 
-function embedTitleFor(m: DiscordMessage, url: string): string | null {
-  for (const e of m.embeds ?? []) {
-    if (!e.title) continue;
-    if (e.url && (e.url === url || e.url.startsWith(url) || url.startsWith(e.url))) return e.title.slice(0, 200);
+const YT_ID_RE = /(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/;
+
+function youtubeId(url: string): string | null {
+  return YT_ID_RE.exec(url)?.[1] ?? null;
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
   }
+}
+
+/** Does this embed (unfurled by Discord) belong to `link`? Discord often rewrites the URL to a canonical one. */
+function embedMatches(e: DiscordEmbed, link: ExtractedLink): boolean {
+  if (!e.url) return false;
+  if (e.url === link.url || e.url === link.urlNorm) return true;
+  if (e.url.startsWith(link.url) || link.url.startsWith(e.url)) return true;
+  const id = youtubeId(link.url);
+  if (id && youtubeId(e.url) === id) return true;
+  return false;
+}
+
+/**
+ * Pick the embed for the i-th link of a message. Exact/canonical URL match first, then a
+ * same-host match when it is unambiguous, then positional (Discord emits embeds in link order).
+ */
+function embedFor(m: DiscordMessage, link: ExtractedLink, index: number, links: ExtractedLink[]): DiscordEmbed | null {
+  const embeds = (m.embeds ?? []).filter((e) => e.type !== 'image' && e.type !== 'gifv');
+  if (embeds.length === 0) return null;
+  const byUrl = embeds.find((e) => embedMatches(e, link));
+  if (byUrl) return byUrl;
+  const sameHost = embeds.filter((e) => e.url && hostOf(e.url) === link.domain);
+  if (sameHost.length === 1 && links.filter((l) => l.domain === link.domain).length === 1) return sameHost[0];
+  if (embeds.length === links.length) return embeds[index];
+  return null;
+}
+
+/** Strip the Discord markdown that embed fixers put in descriptions: **bold**, `code`, \-escapes. */
+function stripMarkdown(s: string): string {
+  return s
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // [text](url) → text
+    .replace(/\*\*|__|~~|`/g, '')
+    .replace(/\\([^A-Za-z0-9])/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** A display title from an embed: its title, else "author: first line of description" (tweets, reels). */
+function embedTitle(e: DiscordEmbed): string | null {
+  if (e.title) return stripMarkdown(e.title).slice(0, 200);
+  const author = e.author?.name?.trim();
+  // First line that has actual words in it (skips the "❤️ 1,537 💬 13" stats line reel embeds lead with).
+  const desc = e.description
+    ?.split('\n')
+    .map((l) => stripMarkdown(l))
+    .find((l) => /\p{L}{2,}/u.test(l));
+  if (author && desc) return `${author}: ${desc}`.slice(0, 200);
+  if (author) return author.slice(0, 200);
+  if (desc) return desc.slice(0, 200);
   return null;
 }
 
@@ -111,10 +167,11 @@ export async function runIngest(env: IngestEnv): Promise<IngestReport> {
             report.messagesSeen++;
             if (skipBots && m.author.bot) continue;
             const links = extractLinks(m.content);
-            for (const l of links) {
+            for (const [i, l] of links.entries()) {
+              const embed = embedFor(m, l, i, links);
               const row: UpsertLink = {
                 url: l.url, urlNorm: l.urlNorm, domain: l.domain,
-                title: embedTitleFor(m, l.url) ?? embedTitleFor(m, l.urlNorm),
+                title: embed ? embedTitle(embed) : null,
                 guildId, channelId: ch.id, channelName,
                 messageId: m.id, authorId: m.author.id, authorName: displayName(m.author),
                 postedAt: new Date(m.timestamp).toISOString(),

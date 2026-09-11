@@ -21,9 +21,12 @@ export interface DiscordChannel {
 }
 
 export interface DiscordEmbed {
+  type?: string; // "rich" | "link" | "video" | "article" | "image" | "gifv" | ...
   title?: string;
   url?: string;
   description?: string;
+  author?: { name?: string; url?: string };
+  provider?: { name?: string; url?: string };
 }
 
 export interface DiscordMessage {
