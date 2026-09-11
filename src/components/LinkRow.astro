@@ -1,52 +1,139 @@
 ---
-import type { LinkRow } from '../lib/db';
-import { messageUrl } from '../lib/discord';
-import { timeAgo } from '../lib/time';
+import type { LinkRow } from "../lib/db";
+import { messageUrl } from "../lib/discord";
+import { timeAgo } from "../lib/time";
 
 interface Props {
-  link: LinkRow;
-  rank: number;
+    link: LinkRow;
 }
-const { link, rank } = Astro.props;
-const title = link.title || link.url.replace(/^https?:\/\/(www\.)?/, '');
+const { link } = Astro.props;
+const title = link.title || link.url.replace(/^https?:\/\/(www\.)?/, "");
 const discordHref = messageUrl(link.guild_id, link.channel_id, link.message_id);
-const reactionLabel = `${link.reactions} reaction${link.reactions === 1 ? '' : 's'}`;
+const reactionLabel = `${link.reactions} reaction${link.reactions === 1 ? "" : "s"}`;
 ---
-<li class="row">
-  <span class="rank">{rank}.</span>
-  <div class="body">
-    <div class="titleline">
-      <a class="title" href={link.url} rel="noopener noreferrer nofollow ugc">{title}</a>
-      <a class="domain" href={`https://${link.domain}`} rel="noopener noreferrer nofollow">({link.domain})</a>
+
+<li class="row" data-channel={link.channel_name}>
+    <span class="rank" aria-hidden="true"></span>
+    <div class="body">
+        <div class="titleline">
+            <a
+                class="title"
+                href={link.url}
+                rel="noopener noreferrer nofollow ugc"
+            >
+                {title}
+            </a>
+            <a
+                class="domain"
+                href={`https://${link.domain}`}
+                rel="noopener noreferrer nofollow"
+            >
+                ({link.domain})
+            </a>
+        </div>
+        <div class="meta">
+            <span
+                class="reactions"
+                title={reactionLabel}
+                aria-label={reactionLabel}
+            >
+                <svg
+                    viewBox="0 0 16 16"
+                    width="12"
+                    height="12"
+                    aria-hidden="true"
+                >
+                    <path
+                        fill="currentColor"
+                        d="M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13ZM8 3a5 5 0 1 0 0 10A5 5 0 0 0 8 3Zm-2.25 6.25a.75.75 0 0 1 1.06.02c.31.32.75.53 1.19.53s.88-.21 1.19-.53a.75.75 0 1 1 1.08 1.04A3.16 3.16 0 0 1 8 11.3a3.16 3.16 0 0 1-2.27-.99.75.75 0 0 1 .02-1.06ZM6 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm4 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"
+                    />
+                </svg>
+                {link.reactions}
+            </span>
+            <span class="sep">·</span>
+            <span>
+                by <b>Tambay</b>
+            </span>
+            <span class="sep">·</span>
+            <span class="channel">#{link.channel_name}</span>
+            <span class="sep">·</span>
+            <time datetime={link.posted_at} title={link.posted_at}>
+                {timeAgo(link.posted_at)}
+            </time>
+            <span class="sep">·</span>
+            <a class="discord" href={discordHref} rel="noopener noreferrer">
+                open in Discord
+            </a>
+        </div>
     </div>
-    <div class="meta">
-      <span class="reactions" title={reactionLabel} aria-label={reactionLabel}>
-        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13ZM8 3a5 5 0 1 0 0 10A5 5 0 0 0 8 3Zm-2.25 6.25a.75.75 0 0 1 1.06.02c.31.32.75.53 1.19.53s.88-.21 1.19-.53a.75.75 0 1 1 1.08 1.04A3.16 3.16 0 0 1 8 11.3a3.16 3.16 0 0 1-2.27-.99.75.75 0 0 1 .02-1.06ZM6 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm4 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/></svg>
-        {link.reactions}
-      </span>
-      <span class="sep">·</span>
-      <span>by <b>{link.author_name}</b></span>
-      <span class="sep">·</span>
-      <span class="channel">#{link.channel_name}</span>
-      <span class="sep">·</span>
-      <time datetime={link.posted_at} title={link.posted_at}>{timeAgo(link.posted_at)}</time>
-      <span class="sep">·</span>
-      <a class="discord" href={discordHref} rel="noopener noreferrer">open in Discord ↗</a>
-    </div>
-  </div>
 </li>
 
 <style>
-  .row { display: grid; grid-template-columns: 2.2em 1fr; gap: 0 4px; padding: 6px 0; }
-  .rank { color: var(--faint); text-align: right; font-variant-numeric: tabular-nums; padding-top: 1px; }
-  .titleline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; }
-  .title { font-size: 15px; overflow-wrap: anywhere; }
-  .title:visited { color: var(--muted); }
-  .domain { color: var(--faint); font-size: 12px; }
-  .meta { margin-top: 2px; color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; }
-  .meta b { font-weight: 500; color: var(--fg); }
-  .reactions { display: inline-flex; align-items: center; gap: 3px; color: var(--pill-fg); font-weight: 600; font-variant-numeric: tabular-nums; }
-  .channel { color: var(--muted); }
-  .discord { color: var(--accent); }
-  .sep { color: var(--faint); }
+    .row {
+        display: grid;
+        grid-template-columns: 2.2em 1fr;
+        gap: 0 4px;
+        padding: 6px 0;
+        counter-increment: rank;
+    }
+    .rank {
+        color: var(--faint);
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        padding-top: 1px;
+    }
+    .rank::before {
+        content: counter(rank) ".";
+    }
+    /* Toggled from the header checkbox; the class is set on <html> before first paint. */
+    :global(html.hide-doomscrolling) .row[data-channel="doomscrolling"] {
+        display: none;
+    }
+    .titleline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0 6px;
+    }
+    .title {
+        font-size: 15px;
+        overflow-wrap: anywhere;
+    }
+    .title:visited {
+        color: var(--muted);
+    }
+    .domain {
+        color: var(--faint);
+        font-size: 12px;
+    }
+    .meta {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0 4px;
+    }
+    .meta b {
+        font-weight: 500;
+        color: var(--fg);
+    }
+    .reactions {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        color: var(--pill-fg);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+    .channel {
+        color: var(--muted);
+    }
+    .discord {
+        color: var(--accent);
+    }
+    .sep {
+        color: var(--faint);
+    }
 </style>

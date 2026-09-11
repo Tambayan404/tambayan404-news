@@ -113,3 +113,36 @@ export function setStateStatement(db: D1Database, key: string, value: string): D
     .prepare('INSERT INTO sync_state (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value')
     .bind(key, value);
 }
+
+/** Newest links across all days, for the RSS feed. */
+export async function recentLinks(db: D1Database, limit = 50): Promise<LinkRow[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, url, url_norm, domain, title, guild_id, channel_id, channel_name, message_id,
+              author_id, author_name, posted_at, day, reactions
+         FROM links
+        ORDER BY posted_at DESC, id DESC
+        LIMIT ?`,
+    )
+    .bind(limit)
+    .all<LinkRow>();
+  return results;
+}
+
+/**
+ * Front page: every link, newest day first, best-reacted first within a day. Paged HN-style.
+ * Fetches one extra row to know whether a next page exists.
+ */
+export async function frontPage(db: D1Database, page: number, perPage: number): Promise<{ links: LinkRow[]; hasMore: boolean }> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, url, url_norm, domain, title, guild_id, channel_id, channel_name, message_id,
+              author_id, author_name, posted_at, day, reactions
+         FROM links
+        ORDER BY day DESC, reactions DESC, posted_at DESC
+        LIMIT ? OFFSET ?`,
+    )
+    .bind(perPage + 1, (page - 1) * perPage)
+    .all<LinkRow>();
+  return { links: results.slice(0, perPage), hasMore: results.length > perPage };
+}

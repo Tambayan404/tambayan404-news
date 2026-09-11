@@ -21,15 +21,17 @@ Discord REST API  ──(cron, every 5 min)──▶  Worker `scheduled()`  ─�
   walked round-robin from a stored cursor, so a large server is still fully covered over a few runs.
 - Titles come from Discord's own link embed when present; otherwise a small fetch reads `og:title` /
   `<title>` in a later pass. GIF hosts, Discord links and media CDNs are ignored.
-- Pages: `/` (today), `/day/YYYY-MM-DD`, `/past`. Days are bucketed in `SITE_TZ` (Asia/Manila).
+- Pages: `/` (front page: all links newest day first, 30 per page, `?p=2` for more), `/day/YYYY-MM-DD`,
+  `/past`, plus an RSS feed of the 50 newest links at `/rss`. Days are bucketed in `SITE_TZ` (Asia/Manila).
 
 ## Setup
 
 ### 1. Discord bot
 
 1. Go to <https://discord.com/developers/applications> → **New Application** → name it (e.g. `t404-news`).
-2. **Bot** tab → **Reset Token** → copy the token (this is `DISCORD_BOT_TOKEN`). Leave all *Privileged
-   Gateway Intents* off; this bot never connects to the gateway. Turn **Public Bot** off.
+2. **Bot** tab → **Reset Token** → copy the token (this is `DISCORD_BOT_TOKEN`). Under *Privileged
+   Gateway Intents* enable **Message Content Intent**: without it Discord returns every message with
+   empty `content`, even over REST, and no links are ever found. Turn **Public Bot** off.
 3. **OAuth2 → URL Generator**: scope `bot`; permissions **View Channels** and **Read Message History**.
    Open the generated URL and add the bot to the server.
 4. Server → **Server Settings → Widget** (or right-click the server icon with Developer Mode on) →
@@ -104,6 +106,6 @@ src/lib/discord.ts       Tiny Discord REST client + budget/rate-limit handling
 src/lib/links.ts         URL extraction & normalization
 src/lib/title.ts         og:title / <title> fetcher (HTMLRewriter)
 src/lib/db.ts            D1 queries
-src/pages/               index, day/[day], past, api/ingest
+src/pages/               index, day/[day], past, rss, api/ingest
 migrations/              D1 schema
 ```

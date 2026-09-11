@@ -2,8 +2,12 @@
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "t404-news",
 	"main": "./src/worker.ts",
+	"workers_dev": true,
+	"preview_urls": true,
 	"compatibility_date": "2026-09-11",
-	"compatibility_flags": ["global_fetch_strictly_public"],
+	"compatibility_flags": [
+		"global_fetch_strictly_public"
+	],
 	"assets": {
 		"directory": "./dist",
 		"binding": "ASSETS"
@@ -12,20 +16,21 @@
 		"enabled": true
 	},
 	"triggers": {
-		"crons": ["*/5 * * * *"]
+		"crons": [
+			"*/5 * * * *"
+		]
 	},
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "t404-news",
-			"database_id": "REPLACE_WITH_D1_ID",
+			"database_id": "0e434801-48d1-45b4-84be-0507551158dc",
 			"migrations_dir": "migrations"
 		}
 	],
 	"vars": {
-		"SITE_NAME": "Tambayan 404 News",
+		"SITE_NAME": "Tambayan404 News",
 		"SITE_TZ": "Asia/Manila",
-		"DISCORD_GUILD_ID": "REPLACE_WITH_GUILD_ID",
 		"LOOKBACK_HOURS": "72",
 		"SUBREQUEST_BUDGET": "40",
 		"SKIP_BOT_AUTHORS": "true"

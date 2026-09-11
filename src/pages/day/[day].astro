@@ -13,7 +13,6 @@ if (!day || !isValidDay(day)) return new Response('Not found', { status: 404 });
 
 const tz = env.SITE_TZ || 'UTC';
 const today = dayOf(new Date(), tz);
-if (day === today) return Astro.redirect('/', 302);
 if (day > today) return new Response('Not found', { status: 404 });
 
 const [links, nav, latest] = await Promise.all([linksForDay(env.DB, day), adjacentDays(env.DB, day), latestDay(env.DB)]);
@@ -22,6 +21,6 @@ const [links, nav, latest] = await Promise.all([linksForDay(env.DB, day), adjace
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900');
 ---
 <Layout title={day}>
-  <DayNav day={day} prev={nav.prev} next={nav.next} isToday={false} count={links.length} />
+  <DayNav day={day} prev={nav.prev} next={nav.next} isToday={day === today} count={links.length} />
   <LinkList links={links} emptyHint="No links were shared this day." latestDay={latest} />
 </Layout>

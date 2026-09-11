@@ -1,20 +1,32 @@
 ---
 import { env } from 'cloudflare:workers';
 import Layout from '../layouts/Layout.astro';
-import DayNav from '../components/DayNav.astro';
 import LinkList from '../components/LinkList.astro';
-import { adjacentDays, latestDay, linksForDay } from '../lib/db';
-import { dayOf } from '../lib/time';
+import { frontPage } from '../lib/db';
 
 export const prerender = false;
 
-const tz = env.SITE_TZ || 'UTC';
-const today = dayOf(new Date(), tz);
-const [links, nav, latest] = await Promise.all([linksForDay(env.DB, today), adjacentDays(env.DB, today), latestDay(env.DB)]);
+const PER_PAGE = 30;
+
+// HN-style front page: one continuous list across days, ?p=2 for the next 30.
+const rawPage = Number(Astro.url.searchParams.get('p') ?? '1');
+const page = Number.isInteger(rawPage) && rawPage >= 1 ? rawPage : 1;
+const { links, hasMore } = await frontPage(env.DB, page, PER_PAGE);
+if (page > 1 && links.length === 0) return new Response('Not found', { status: 404 });
 
 Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
 ---
 <Layout>
-  <DayNav day={today} prev={nav.prev} next={nav.next} isToday={true} count={links.length} />
-  <LinkList links={links} emptyHint="No links shared yet today." latestDay={latest !== today ? latest : null} />
+  <LinkList links={links} start={(page - 1) * PER_PAGE + 1} emptyHint="No links collected yet." />
+  {hasMore && (
+    <nav class="more">
+      <a href={`/?p=${page + 1}`} rel="next">More</a>
+    </nav>
+  )}
 </Layout>
+
+<style>
+  .more { padding: 14px 0 0 2.2em; }
+  .more a { font-size: 15px; color: var(--fg); }
+  main :global(.links) { margin-top: 10px; }
+</style>

@@ -14,6 +14,41 @@ const SKIP_HOSTS = [
   'media.giphy.com',
 ];
 
+/**
+ * "Embed fixer" proxies people paste so Instagram/X posts unfurl properly in Discord. The link is
+ * kept as posted (it works in a browser too), but the displayed domain is the real site.
+ */
+const FIXER_DOMAINS: Record<string, string> = {
+  'fixvx.com': 'x.com',
+  'vxtwitter.com': 'x.com',
+  'fxtwitter.com': 'x.com',
+  'fixupx.com': 'x.com',
+  'fxembed.com': 'x.com',
+  'twittpr.com': 'x.com',
+  'girlcockx.com': 'x.com',
+  'stupidpenisx.com': 'x.com',
+  'twitter.com': 'x.com',
+  'oginstagram.com': 'instagram.com',
+  'ddinstagram.com': 'instagram.com',
+  'kkinstagram.com': 'instagram.com',
+  'eeinstagram.com': 'instagram.com',
+  'instagramez.com': 'instagram.com',
+  'vxtiktok.com': 'tiktok.com',
+  'tnktok.com': 'tiktok.com',
+  'fxreddit.com': 'reddit.com',
+  'rxddit.com': 'reddit.com',
+  'vxreddit.com': 'reddit.com',
+  'phixiv.net': 'pixiv.net',
+  'fxbsky.app': 'bsky.app',
+  'bskx.app': 'bsky.app',
+};
+
+/** Display domain for a URL: strips "www." and unmasks embed-fixer hosts. */
+export function displayDomain(hostname: string): string {
+  const h = hostname.replace(/^www\./, '');
+  return FIXER_DOMAINS[h] ?? h;
+}
+
 const TRACKING_PARAMS = /^(utm_|fbclid$|gclid$|mc_cid$|mc_eid$|igshid$|si$|ref_src$)/;
 
 export function shouldSkipHost(host: string): boolean {
@@ -70,7 +105,7 @@ export function extractLinks(text: string): ExtractedLink[] {
     seen.set(urlNorm, {
       url: trimTrailing(match[0]),
       urlNorm,
-      domain: u.hostname.replace(/^www\./, ''),
+      domain: displayDomain(u.hostname),
     });
   }
   return [...seen.values()];
