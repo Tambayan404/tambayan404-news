@@ -16,17 +16,27 @@ if (page > 1 && links.length === 0) return new Response('Not found', { status: 4
 
 Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
 ---
+
 <Layout>
   <LinkList links={links} start={(page - 1) * PER_PAGE + 1} emptyHint="No links collected yet." />
   {hasMore && (
     <nav class="more">
-      <a href={`/?p=${page + 1}`} rel="next">More</a>
+      <a href={`/?p=${page + 1}`} rel="next">
+        More
+      </a>
     </nav>
   )}
 </Layout>
 
 <style>
-  .more { padding: 14px 0 0 2.2em; }
-  .more a { font-size: 15px; color: var(--fg); }
-  main :global(.links) { margin-top: 10px; }
+  .more {
+    padding: 14px 0 0 2.2em;
+  }
+  .more a {
+    font-size: 15px;
+    color: var(--fg);
+  }
+  main :global(.links) {
+    margin-top: 10px;
+  }
 </style>

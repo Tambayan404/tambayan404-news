@@ -29,8 +29,8 @@ Discord REST API  ──(cron, every 5 min)──▶  Worker `scheduled()`  ─�
 ### 1. Discord bot
 
 1. Go to <https://discord.com/developers/applications> → **New Application** → name it (e.g. `t404-news`).
-2. **Bot** tab → **Reset Token** → copy the token (this is `DISCORD_BOT_TOKEN`). Under *Privileged
-   Gateway Intents* enable **Message Content Intent**: without it Discord returns every message with
+2. **Bot** tab → **Reset Token** → copy the token (this is `DISCORD_BOT_TOKEN`). Under _Privileged
+   Gateway Intents_ enable **Message Content Intent**: without it Discord returns every message with
    empty `content`, even over REST, and no links are ever found. Turn **Public Bot** off.
 3. **OAuth2 → URL Generator**: scope `bot`; permissions **View Channels** and **Read Message History**.
    Open the generated URL and add the bot to the server.
@@ -87,13 +87,13 @@ Local D1 state lives in `.wrangler/state/` (gitignored) and is shared by both de
 
 ## Configuration (`wrangler.jsonc` → `vars`)
 
-| Var | Default | Meaning |
-|---|---|---|
-| `SITE_NAME` | Tambayan 404 News | Header / page titles |
-| `SITE_TZ` | Asia/Manila | Timezone used to decide which day a link belongs to |
-| `LOOKBACK_HOURS` | 72 | How far back each run re-reads messages (also how long reaction counts keep updating) |
-| `SUBREQUEST_BUDGET` | 40 | Max outbound requests per cron run; keep under 50 on the free plan, can go to ~900 on paid |
-| `SKIP_BOT_AUTHORS` | true | Ignore links posted by bots/webhooks |
+| Var                 | Default           | Meaning                                                                                    |
+| ------------------- | ----------------- | ------------------------------------------------------------------------------------------ |
+| `SITE_NAME`         | Tambayan 404 News | Header / page titles                                                                       |
+| `SITE_TZ`           | Asia/Manila       | Timezone used to decide which day a link belongs to                                        |
+| `LOOKBACK_HOURS`    | 72                | How far back each run re-reads messages (also how long reaction counts keep updating)      |
+| `SUBREQUEST_BUDGET` | 40                | Max outbound requests per cron run; keep under 50 on the free plan, can go to ~900 on paid |
+| `SKIP_BOT_AUTHORS`  | true              | Ignore links posted by bots/webhooks                                                       |
 
 Cron cadence is in `triggers.crons` (default every 5 minutes).
 
@@ -102,11 +102,11 @@ Cron cadence is in `triggers.crons` (default every 5 minutes).
 These are not in `wrangler.jsonc`. Set them with `pnpm wrangler secret put <NAME>` for the deployed
 worker, and in `.dev.vars` (gitignored, copied from `.dev.vars.example`) for local dev.
 
-| Secret | Meaning |
-|---|---|
-| `DISCORD_GUILD_ID` | The server to read from. Not sensitive, but kept out of the repo so it isn't named publicly |
-| `DISCORD_BOT_TOKEN` | Bot token with View Channels + Read Message History |
-| `INGEST_SECRET` | Shared secret guarding `POST /api/ingest` |
+| Secret              | Meaning                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------- |
+| `DISCORD_GUILD_ID`  | The server to read from. Not sensitive, but kept out of the repo so it isn't named publicly |
+| `DISCORD_BOT_TOKEN` | Bot token with View Channels + Read Message History                                         |
+| `INGEST_SECRET`     | Shared secret guarding `POST /api/ingest`                                                   |
 
 `wrangler types` generates `worker-configuration.d.ts` from `wrangler.jsonc` plus `.dev.vars`, so
 `pnpm build` needs `.dev.vars` to exist locally — the example file carries the key names for that.
