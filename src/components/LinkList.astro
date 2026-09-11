@@ -11,19 +11,36 @@ interface Props {
 }
 const { links, emptyHint = 'Nothing shared yet.', latestDay = null, start = 1 } = Astro.props;
 ---
+
 {links.length === 0 ? (
   <p class="empty">
     {emptyHint}
-    {latestDay && <> Try the <a href={`/day/${latestDay}`}>most recent day with links</a>.</>}
+    {latestDay && (
+      <>
+        {' '}
+        Try the <a href={`/day/${latestDay}`}>most recent day with links</a>.
+      </>
+    )}
   </p>
 ) : (
   <ol class="links" style={`counter-reset: rank ${start - 1}`}>
-    {links.map((link) => <LinkRow_ link={link} />)}
+    {links.map((link) => (
+      <LinkRow_ link={link} />
+    ))}
   </ol>
 )}
 
 <style>
-  .links { list-style: none; margin: 0; padding: 0; }
-  .empty { color: var(--muted); padding: 24px 0; }
-  .empty a { color: var(--accent); }
+  .links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .empty {
+    color: var(--muted);
+    padding: 24px 0;
+  }
+  .empty a {
+    color: var(--accent);
+  }
 </style>

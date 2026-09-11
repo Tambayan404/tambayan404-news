@@ -22,7 +22,11 @@ export function isValidDay(s: string): boolean {
 
 export function humanDay(day: string, tz: string): string {
   return new Intl.DateTimeFormat('en-US', {
-    timeZone: tz, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    timeZone: tz,
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   }).format(new Date(day + 'T12:00:00Z'));
 }
 

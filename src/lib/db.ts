@@ -47,7 +47,10 @@ export async function linksForDay(db: D1Database, day: string): Promise<LinkRow[
 }
 
 /** Nearest day with links before/after `day` (for prev/next navigation). */
-export async function adjacentDays(db: D1Database, day: string): Promise<{ prev: string | null; next: string | null }> {
+export async function adjacentDays(
+  db: D1Database,
+  day: string,
+): Promise<{ prev: string | null; next: string | null }> {
   const [prev, next] = await db.batch([
     db.prepare('SELECT day FROM links WHERE day < ? ORDER BY day DESC LIMIT 1').bind(day),
     db.prepare('SELECT day FROM links WHERE day > ? ORDER BY day ASC LIMIT 1').bind(day),
@@ -86,12 +89,28 @@ export function upsertStatement(db: D1Database, l: UpsertLink): D1PreparedStatem
          updated_at   = excluded.updated_at`,
     )
     .bind(
-      l.url, l.urlNorm, l.domain, l.title, l.title ? 1 : 0, l.guildId, l.channelId, l.channelName,
-      l.messageId, l.authorId, l.authorName, l.postedAt, l.day, l.reactions, new Date().toISOString(),
+      l.url,
+      l.urlNorm,
+      l.domain,
+      l.title,
+      l.title ? 1 : 0,
+      l.guildId,
+      l.channelId,
+      l.channelName,
+      l.messageId,
+      l.authorId,
+      l.authorName,
+      l.postedAt,
+      l.day,
+      l.reactions,
+      new Date().toISOString(),
     );
 }
 
-export async function linksMissingTitle(db: D1Database, limit: number): Promise<{ id: number; url: string }[]> {
+export async function linksMissingTitle(
+  db: D1Database,
+  limit: number,
+): Promise<{ id: number; url: string }[]> {
   const { results } = await db
     .prepare('SELECT id, url FROM links WHERE title_checked = 0 ORDER BY id DESC LIMIT ?')
     .bind(limit)
@@ -104,13 +123,18 @@ export function setTitleStatement(db: D1Database, id: number, title: string | nu
 }
 
 export async function getState(db: D1Database, key: string): Promise<string | null> {
-  const row = await db.prepare('SELECT value FROM sync_state WHERE key = ?').bind(key).first<{ value: string }>();
+  const row = await db
+    .prepare('SELECT value FROM sync_state WHERE key = ?')
+    .bind(key)
+    .first<{ value: string }>();
   return row?.value ?? null;
 }
 
 export function setStateStatement(db: D1Database, key: string, value: string): D1PreparedStatement {
   return db
-    .prepare('INSERT INTO sync_state (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value')
+    .prepare(
+      'INSERT INTO sync_state (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
+    )
     .bind(key, value);
 }
 
@@ -133,7 +157,11 @@ export async function recentLinks(db: D1Database, limit = 50): Promise<LinkRow[]
  * Front page: every link, newest day first, best-reacted first within a day. Paged HN-style.
  * Fetches one extra row to know whether a next page exists.
  */
-export async function frontPage(db: D1Database, page: number, perPage: number): Promise<{ links: LinkRow[]; hasMore: boolean }> {
+export async function frontPage(
+  db: D1Database,
+  page: number,
+  perPage: number,
+): Promise<{ links: LinkRow[]; hasMore: boolean }> {
   const { results } = await db
     .prepare(
       `SELECT id, url, url_norm, domain, title, guild_id, channel_id, channel_name, message_id,

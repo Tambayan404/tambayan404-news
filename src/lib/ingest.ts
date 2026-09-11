@@ -6,11 +6,27 @@
  * cursor, and stops cleanly when the budget is spent. The next run picks up where it left off.
  * Messages within LOOKBACK_HOURS are re-fetched each pass so reaction counts stay fresh.
  */
-import { BudgetExhausted, ChannelType, DiscordClient, displayName, snowflakeFromTime, type DiscordChannel, type DiscordEmbed, type DiscordMessage } from './discord';
+import {
+  BudgetExhausted,
+  ChannelType,
+  DiscordClient,
+  displayName,
+  snowflakeFromTime,
+  type DiscordChannel,
+  type DiscordEmbed,
+  type DiscordMessage,
+} from './discord';
 import { extractLinks, type ExtractedLink } from './links';
 import { fetchTitle } from './title';
 import { dayOf } from './time';
-import { getState, linksMissingTitle, setStateStatement, setTitleStatement, upsertStatement, type UpsertLink } from './db';
+import {
+  getState,
+  linksMissingTitle,
+  setStateStatement,
+  setTitleStatement,
+  upsertStatement,
+  type UpsertLink,
+} from './db';
 
 export interface IngestEnv {
   DB: D1Database;
@@ -67,7 +83,12 @@ function embedMatches(e: DiscordEmbed, link: ExtractedLink): boolean {
  * Pick the embed for the i-th link of a message. Exact/canonical URL match first, then a
  * same-host match when it is unambiguous, then positional (Discord emits embeds in link order).
  */
-function embedFor(m: DiscordMessage, link: ExtractedLink, index: number, links: ExtractedLink[]): DiscordEmbed | null {
+function embedFor(
+  m: DiscordMessage,
+  link: ExtractedLink,
+  index: number,
+  links: ExtractedLink[],
+): DiscordEmbed | null {
   const embeds = (m.embeds ?? []).filter((e) => e.type !== 'image' && e.type !== 'gifv');
   if (embeds.length === 0) return null;
   const byUrl = embeds.find((e) => embedMatches(e, link));
@@ -114,11 +135,17 @@ function isTextLike(c: DiscordChannel): boolean {
 
 export async function runIngest(env: IngestEnv): Promise<IngestReport> {
   const report: IngestReport = {
-    channelsScanned: 0, messagesSeen: 0, linksUpserted: 0, titlesFetched: 0,
-    subrequestsUsed: 0, budgetExhausted: false, errors: [],
+    channelsScanned: 0,
+    messagesSeen: 0,
+    linksUpserted: 0,
+    titlesFetched: 0,
+    subrequestsUsed: 0,
+    budgetExhausted: false,
+    errors: [],
   };
   if (!env.DISCORD_BOT_TOKEN) throw new Error('DISCORD_BOT_TOKEN is not set');
-  if (!env.DISCORD_GUILD_ID || env.DISCORD_GUILD_ID.startsWith('REPLACE')) throw new Error('DISCORD_GUILD_ID is not set');
+  if (!env.DISCORD_GUILD_ID || env.DISCORD_GUILD_ID.startsWith('REPLACE'))
+    throw new Error('DISCORD_GUILD_ID is not set');
 
   const budget = Number(env.SUBREQUEST_BUDGET ?? 40);
   const lookbackHours = Number(env.LOOKBACK_HOURS ?? 72);
@@ -130,8 +157,12 @@ export async function runIngest(env: IngestEnv): Promise<IngestReport> {
 
   try {
     // 1. Enumerate channels (2 subrequests).
-    const [channels, threads] = await Promise.all([discord.guildChannels(guildId), discord.activeThreads(guildId)]);
-    if (!channels) throw new Error('Could not list guild channels: is the bot in the server with View Channels?');
+    const [channels, threads] = await Promise.all([
+      discord.guildChannels(guildId),
+      discord.activeThreads(guildId),
+    ]);
+    if (!channels)
+      throw new Error('Could not list guild channels: is the bot in the server with View Channels?');
     const parentName = new Map(channels.map((c) => [c.id, c.name ?? c.id]));
     const targets = [...channels, ...threads]
       .filter(isTextLike)
@@ -170,10 +201,16 @@ export async function runIngest(env: IngestEnv): Promise<IngestReport> {
             for (const [i, l] of links.entries()) {
               const embed = embedFor(m, l, i, links);
               const row: UpsertLink = {
-                url: l.url, urlNorm: l.urlNorm, domain: l.domain,
+                url: l.url,
+                urlNorm: l.urlNorm,
+                domain: l.domain,
                 title: embed ? embedTitle(embed) : null,
-                guildId, channelId: ch.id, channelName,
-                messageId: m.id, authorId: m.author.id, authorName: displayName(m.author),
+                guildId,
+                channelId: ch.id,
+                channelName,
+                messageId: m.id,
+                authorId: m.author.id,
+                authorName: displayName(m.author),
                 postedAt: new Date(m.timestamp).toISOString(),
                 day: dayOf(new Date(m.timestamp), tz),
                 reactions: reactionTotal(m),
@@ -190,12 +227,15 @@ export async function runIngest(env: IngestEnv): Promise<IngestReport> {
           cursor = page.reduce((max, m) => (BigInt(m.id) > BigInt(max) ? m.id : max), cursor);
         }
       } catch (e) {
-        if (e instanceof BudgetExhausted) { nextCursor = ch.id; break; }
+        if (e instanceof BudgetExhausted) {
+          nextCursor = ch.id;
+          break;
+        }
         report.errors.push(`${channelName}: ${(e as Error).message}`);
       }
       report.channelsScanned++;
     }
-    await db.batch([setStateStatement(db, CURSOR_KEY, nextCursor ?? (targets[0]?.id ?? ''))]);
+    await db.batch([setStateStatement(db, CURSOR_KEY, nextCursor ?? targets[0]?.id ?? '')]);
     if (nextCursor) report.budgetExhausted = true;
 
     // 3. Backfill titles for links that had no Discord embed title.

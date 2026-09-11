@@ -15,10 +15,13 @@ const YT_ID_RE = /(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|emb
 async function youtubeTitle(url: string, signal: AbortSignal): Promise<string | null> {
   const id = YT_ID_RE.exec(url)?.[1];
   if (!id) return null;
-  const res = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}`, {
-    signal,
-    headers: { Accept: 'application/json' },
-  });
+  const res = await fetch(
+    `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}`,
+    {
+      signal,
+      headers: { Accept: 'application/json' },
+    },
+  );
   if (!res.ok) return null;
   const data = (await res.json()) as { title?: string; author_name?: string };
   if (!data.title) return null;

@@ -59,10 +59,16 @@ export function shouldSkipHost(host: string): boolean {
 function trimTrailing(raw: string): string {
   let s = raw;
   for (;;) {
-    if (/[.,;:!?'"*_~]$/.test(s)) { s = s.slice(0, -1); continue; }
+    if (/[.,;:!?'"*_~]$/.test(s)) {
+      s = s.slice(0, -1);
+      continue;
+    }
     // Drop a trailing ")" only when unbalanced, so "https://en.wikipedia.org/wiki/Foo_(bar)" survives
     // but "(see https://example.com)" does not keep the closing paren.
-    if (s.endsWith(')') && (s.match(/\(/g) ?? []).length < (s.match(/\)/g) ?? []).length) { s = s.slice(0, -1); continue; }
+    if (s.endsWith(')') && (s.match(/\(/g) ?? []).length < (s.match(/\)/g) ?? []).length) {
+      s = s.slice(0, -1);
+      continue;
+    }
     return s;
   }
 }
