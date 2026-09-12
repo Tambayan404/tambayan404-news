@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "t404-news",
+  "account_id": "251449fa702f2011dc152e7759a414f6",
   "main": "./src/worker.ts",
   "workers_dev": true,
   "preview_urls": true,
@@ -20,7 +21,7 @@
     {
       "binding": "DB",
       "database_name": "t404-news",
-      "database_id": "0e434801-48d1-45b4-84be-0507551158dc",
+      "database_id": "d6c9cb66-9a90-4114-bdb0-ba2ea6480712",
       "migrations_dir": "migrations"
     }
   ],
