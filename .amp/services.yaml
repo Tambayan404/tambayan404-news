@@ -1,0 +1,11 @@
+services:
+  dev:
+    # Astro 7 auto-backgrounds `astro dev` when it detects an AI agent, which detaches it from the
+    # orb supervisor. ASTRO_DEV_BACKGROUND keeps it in the foreground.
+    command: pnpm dev --host 0.0.0.0 --port "$PORT" --allowed-hosts .onamp.dev
+    env:
+      ASTRO_DEV_BACKGROUND: '1'
+    health: /
+    portal:
+      url: /
+      title: Tambayan404 News

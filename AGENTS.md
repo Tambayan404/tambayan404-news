@@ -40,7 +40,7 @@ astro dev --background
 Manage it with `astro dev stop`, `astro dev status`, and `astro dev logs`.
 
 - `pnpm build` runs `wrangler types` + `astro check` + `astro build`; keep it green.
-- Local D1: `pnpm db:migrate:local`. Seed rows with `pnpm wrangler d1 execute DB --local --command "..."`.
+- Local D1: `pnpm db:migrate:local`, then `pnpm db:seed:local` for sample links. Seed one-off rows with `pnpm wrangler d1 execute DB --local --command "..."`.
 - Secrets for local dev go in `.dev.vars` (gitignored); their types are declared in `src/env.d.ts`.
 - Cloudflare bindings are read with `import { env } from 'cloudflare:workers'`, not `Astro.locals.runtime`.
 - `POST /api/ingest` needs `Content-Type: application/json` plus `Authorization: Bearer <INGEST_SECRET>`.

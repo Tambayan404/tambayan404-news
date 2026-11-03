@@ -71,6 +71,7 @@ If `budgetExhausted` is true, just call it again; each call continues from where
 ```sh
 cp .dev.vars.example .dev.vars   # fill in all three values
 pnpm db:migrate:local
+pnpm db:seed:local            # optional: sample links from scripts/seed-local.ts, rerunnable
 pnpm dev                      # http://localhost:4321
 curl -X POST -H "Content-Type: application/json" \
      -H "Authorization: Bearer <INGEST_SECRET>" http://localhost:4321/api/ingest
