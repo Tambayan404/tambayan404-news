@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prepares a fresh Amp orb: pinned pnpm, dependencies, local secrets template, local D1 schema.
+# Prepares a fresh Amp orb: pinned pnpm, dependencies, local secrets template, local D1 schema and sample data.
 # Must stay idempotent: it reruns on top of stale snapshots.
 set -euo pipefail
 
@@ -36,3 +36,5 @@ step "pnpm install" pnpm install --frozen-lockfile --prefer-offline
 step ".dev.vars" copy_dev_vars
 step "wrangler types" pnpm --silent wrangler types
 step "local D1 migrations" pnpm --silent db:migrate:local
+# Replaces only the sample rows (guild_id 'seed-guild'), so reruns refresh them without touching other data.
+step "local D1 seed" pnpm --silent db:seed:local
