@@ -14,3 +14,5 @@ npm-debug.log*
 worker-configuration.d.ts
 # macOS
 .DS_Store
+# amp orb portal state
+.amp/portals/*
