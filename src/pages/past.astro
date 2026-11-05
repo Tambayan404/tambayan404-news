@@ -8,7 +8,7 @@ export const prerender = false;
 
 const tz = env.SITE_TZ || 'UTC';
 const days = await recentDays(env.DB, 60);
-Astro.response.headers.set('Cache-Control', 'public, max-age=120, s-maxage=300');
+Astro.response.headers.set('Cache-Control', 'private, max-age=120');
 ---
 
 <Layout title="Past days">

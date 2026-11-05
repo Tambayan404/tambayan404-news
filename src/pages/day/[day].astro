@@ -22,7 +22,7 @@ const [links, nav, latest] = await Promise.all([
 ]);
 
 // Past days rarely change (only reaction counts inside the lookback window), so cache harder.
-Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900');
+Astro.response.headers.set('Cache-Control', 'private, max-age=300');
 ---
 
 <Layout title={day}>

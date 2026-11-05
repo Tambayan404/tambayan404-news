@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
+import { feedKeyUser, memberStatus } from '../lib/auth';
 import { recentLinks } from '../lib/db';
 import { messageUrl } from '../lib/discord';
 
@@ -12,6 +13,11 @@ function esc(s: string): string {
 }
 
 export const GET: APIRoute = async ({ url }) => {
+  // Personal key from /feed; feed readers can't log in, so the key stands in for the session cookie.
+  const uid = await feedKeyUser(env, url.searchParams.get('key'));
+  if (!uid) return new Response('not found', { status: 404 });
+  if (!(await memberStatus(env, uid)).allowed) return new Response('forbidden', { status: 403 });
+
   const siteName = env.SITE_NAME || 'Tambayan 404 News';
   const origin = url.origin;
   const links = await recentLinks(env.DB, FEED_SIZE);
@@ -41,7 +47,7 @@ export const GET: APIRoute = async ({ url }) => {
   <channel>
     <title>${esc(siteName)}</title>
     <link>${esc(origin)}/</link>
-    <atom:link href="${esc(origin)}/rss" rel="self" type="application/rss+xml" />
+    <atom:link href="${esc(`${origin}/rss?key=${url.searchParams.get('key')}`)}" rel="self" type="application/rss+xml" />
     <description>Links shared on the ${esc(siteName.replace(/ News$/, ''))} Discord, newest first.</description>
     <language>en</language>
     <lastBuildDate>${lastBuild}</lastBuildDate>
@@ -53,7 +59,7 @@ ${items}
   return new Response(xml, {
     headers: {
       'Content-Type': 'application/rss+xml; charset=utf-8',
-      'Cache-Control': 'public, max-age=300, s-maxage=600',
+      'Cache-Control': 'private, max-age=300',
     },
   });
 };

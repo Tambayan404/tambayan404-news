@@ -174,3 +174,37 @@ export async function frontPage(
     .all<LinkRow>();
   return { links: results.slice(0, perPage), hasMore: results.length > perPage };
 }
+
+export interface Member {
+  is_member: number;
+  checked_at: number;
+  attempted_at: number;
+}
+
+export function getMember(db: D1Database, userId: string): Promise<Member | null> {
+  return db
+    .prepare('SELECT is_member, checked_at, attempted_at FROM members WHERE user_id = ?')
+    .bind(userId)
+    .first<Member>();
+}
+
+export async function setMember(db: D1Database, userId: string, isMember: boolean, checkedAt: number) {
+  await db
+    .prepare(
+      `INSERT INTO members (user_id, is_member, checked_at, attempted_at) VALUES (?1, ?2, ?3, ?3)
+       ON CONFLICT (user_id) DO UPDATE SET is_member = excluded.is_member, checked_at = excluded.checked_at`,
+    )
+    .bind(userId, isMember ? 1 : 0, checkedAt)
+    .run();
+}
+
+/** Records that Discord is about to be asked, so concurrent or replayed requests don't ask again. */
+export async function markMemberAttempt(db: D1Database, userId: string, at: number) {
+  await db
+    .prepare(
+      `INSERT INTO members (user_id, is_member, checked_at, attempted_at) VALUES (?, 0, 0, ?)
+       ON CONFLICT (user_id) DO UPDATE SET attempted_at = excluded.attempted_at`,
+    )
+    .bind(userId, at)
+    .run();
+}

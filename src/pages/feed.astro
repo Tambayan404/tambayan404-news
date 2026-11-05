@@ -1,0 +1,78 @@
+---
+import { env } from 'cloudflare:workers';
+import Layout from '../layouts/Layout.astro';
+import { feedKey } from '../lib/auth';
+
+export const prerender = false;
+
+const uid = Astro.locals.uid;
+if (!uid) return Astro.redirect('/auth/login?next=/feed');
+const feedUrl = new URL(`/rss?key=${await feedKey(env, uid)}`, Astro.url).href;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+
+<Layout title="RSS feed">
+  <h1>Your RSS feed</h1>
+  <p>Add this link to your feed reader. It’s personal to your Discord account, so don’t share it.</p>
+  <div class="row">
+    <input id="feed-url" type="text" readonly value={feedUrl} aria-label="Your RSS feed link" />
+    <button id="copy-feed" type="button">
+      Copy
+    </button>
+  </div>
+  <p class="hint">It keeps working as long as you’re in the server; membership is re-checked every 3 days.</p>
+</Layout>
+
+<script>
+  const input = document.getElementById('feed-url') as HTMLInputElement;
+  const button = document.getElementById('copy-feed') as HTMLButtonElement;
+  input.addEventListener('focus', () => input.select());
+  button.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(input.value);
+      button.textContent = 'Copied';
+    } catch {
+      input.select();
+    }
+  });
+</script>
+
+<style>
+  h1 {
+    font-size: 18px;
+    font-weight: 650;
+    margin: 18px 0 10px;
+  }
+  .row {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 9px;
+    font:
+      13px ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      monospace;
+    color: var(--fg);
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+  }
+  button {
+    padding: 7px 14px;
+    font: inherit;
+    color: var(--accent-fg);
+    background: var(--accent);
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .hint {
+    color: var(--muted);
+    font-size: 13px;
+  }
+</style>

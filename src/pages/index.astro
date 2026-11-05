@@ -14,7 +14,7 @@ const page = Number.isInteger(rawPage) && rawPage >= 1 ? rawPage : 1;
 const { links, hasMore } = await frontPage(env.DB, page, PER_PAGE);
 if (page > 1 && links.length === 0) return new Response('Not found', { status: 404 });
 
-Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
+Astro.response.headers.set('Cache-Control', 'private, max-age=60');
 ---
 
 <Layout>

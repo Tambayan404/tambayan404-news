@@ -21,7 +21,6 @@ const fullTitle = title ? `${title} · ${siteName}` : siteName;
     <meta name="description" content={description} />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="alternate" type="application/rss+xml" title={siteName} href="/rss" />
     <title>{fullTitle}</title>
     <script is:inline>
       // Apply the #doomscrolling preference before first paint to avoid a flash of hidden rows.
@@ -45,7 +44,7 @@ const fullTitle = title ? `${title} · ${siteName}` : siteName;
       </div>
       <nav>
         <a href="/past">past</a>
-        <a href="/rss">rss</a>
+        <a href="/feed">rss</a>
       </nav>
     </header>
     <main>

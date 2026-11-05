@@ -1,3 +1,7 @@
 DISCORD_GUILD_ID=your-server-id
 DISCORD_BOT_TOKEN=your-bot-token
 INGEST_SECRET=choose-a-random-string
+DISCORD_CLIENT_ID=your-oauth-client-id
+DISCORD_CLIENT_SECRET=your-oauth-client-secret
+SESSION_SECRET=any-long-random-string
+FEED_SECRET=another-long-random-string
