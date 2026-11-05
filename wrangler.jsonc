@@ -4,7 +4,7 @@
   "account_id": "251449fa702f2011dc152e7759a414f6",
   "main": "./src/worker.ts",
   "workers_dev": true,
-  "preview_urls": true,
+  "preview_urls": false, // previews of older versions would bypass the members-only gate
   "compatibility_date": "2026-09-11",
   "compatibility_flags": ["global_fetch_strictly_public"],
   "assets": {

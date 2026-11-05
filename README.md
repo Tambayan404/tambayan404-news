@@ -4,6 +4,9 @@ A Hacker News–style front page for every link shared on the Tambayan 404 Disco
 No accounts, no votes, no comments: each entry links to the article, shows how many emoji reactions the
 original Discord message earned, and offers a jump back to that message.
 
+The site is members-only: visitors sign in with Discord and must be in the server. Membership is re-checked
+every 3 days, both for browser sessions and for personal RSS feed links.
+
 **Stack:** Astro 7 (SSR) · Cloudflare Workers · D1 (SQLite) · a Cron Trigger that polls the Discord REST API.
 
 ## How it works
@@ -23,6 +26,15 @@ Discord REST API  ──(cron, every 5 min)──▶  Worker `scheduled()`  ─�
   `<title>` in a later pass. GIF hosts, Discord links and media CDNs are ignored.
 - Pages: `/` (front page: all links newest day first, 30 per page, `?p=2` for more), `/day/YYYY-MM-DD`,
   `/past`, plus an RSS feed of the 50 newest links at `/rss`. Days are bucketed in `SITE_TZ` (Asia/Manila).
+- Access (`src/middleware.ts`, `src/lib/auth.ts`): Discord OAuth2 with the `identify` scope tells us who the
+  visitor is; the bot then calls `GET /guilds/{id}/members/{user}` to confirm they are in the server (and past
+  membership screening). The session is an HMAC-signed cookie, so page views cost no D1 or Discord calls.
+  After 3 days the next request re-checks membership through the D1 `members` table (one Discord call per
+  user at most once a minute); if Discord is unreachable the last good check is honoured for up to 6 days.
+  A session unused for 6 days has to sign in again.
+- RSS: `/feed` shows each member a personal `/rss?key=…` link (signed with `FEED_SECRET`). `/rss` keeps the
+  last membership result in D1 (`members`) and asks Discord again every 3 days. Rotating `FEED_SECRET`
+  revokes every feed link; rotating `SESSION_SECRET` signs everyone out.
 
 ## Setup
 
@@ -37,6 +49,11 @@ Discord REST API  ──(cron, every 5 min)──▶  Worker `scheduled()`  ─�
 4. Server → **Server Settings → Widget** (or right-click the server icon with Developer Mode on) →
    **Copy Server ID**. This is `DISCORD_GUILD_ID`.
 5. Optional: to keep a channel out of the site, deny the bot's role **View Channel** on that channel.
+6. **OAuth2** tab: copy the **Client ID** (`DISCORD_CLIENT_ID`), **Reset Secret** for the client secret
+   (`DISCORD_CLIENT_SECRET`), and under **Redirects** add `https://<your-site>/auth/callback` (plus
+   `http://localhost:4321/auth/callback` and `http://localhost:8787/auth/callback` for local dev).
+   Preview URLs are disabled in `wrangler.jsonc`: each one serves an older Worker version that may predate
+   the login gate.
 
 ### 2. Cloudflare
 
@@ -52,6 +69,10 @@ Edit `wrangler.jsonc`: set `database_id`.
 pnpm wrangler secret put DISCORD_GUILD_ID   # the server id from step 1
 pnpm wrangler secret put DISCORD_BOT_TOKEN
 pnpm wrangler secret put INGEST_SECRET      # any random string; guards POST /api/ingest
+pnpm wrangler secret put DISCORD_CLIENT_ID
+pnpm wrangler secret put DISCORD_CLIENT_SECRET
+pnpm wrangler secret put SESSION_SECRET     # long random string; signs login cookies
+pnpm wrangler secret put FEED_SECRET        # long random string; signs personal RSS links
 pnpm db:migrate:remote
 pnpm run deploy   # "run" is required: pnpm has a built-in "deploy" command
 ```
@@ -69,7 +90,7 @@ If `budgetExhausted` is true, just call it again; each call continues from where
 ### 3. Local development
 
 ```sh
-cp .dev.vars.example .dev.vars   # fill in all three values
+cp .dev.vars.example .dev.vars   # fill in all values
 pnpm db:migrate:local
 pnpm db:seed:local            # optional: sample links from scripts/seed-local.ts, rerunnable
 pnpm dev                      # http://localhost:4321
@@ -103,11 +124,15 @@ Cron cadence is in `triggers.crons` (default every 5 minutes).
 These are not in `wrangler.jsonc`. Set them with `pnpm wrangler secret put <NAME>` for the deployed
 worker, and in `.dev.vars` (gitignored, copied from `.dev.vars.example`) for local dev.
 
-| Secret              | Meaning                                                                                     |
-| ------------------- | ------------------------------------------------------------------------------------------- |
-| `DISCORD_GUILD_ID`  | The server to read from. Not sensitive, but kept out of the repo so it isn't named publicly |
-| `DISCORD_BOT_TOKEN` | Bot token with View Channels + Read Message History                                         |
-| `INGEST_SECRET`     | Shared secret guarding `POST /api/ingest`                                                   |
+| Secret                  | Meaning                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------- |
+| `DISCORD_GUILD_ID`      | The server to read from. Not sensitive, but kept out of the repo so it isn't named publicly |
+| `DISCORD_BOT_TOKEN`     | Bot token with View Channels + Read Message History                                         |
+| `INGEST_SECRET`         | Shared secret guarding `POST /api/ingest`                                                   |
+| `DISCORD_CLIENT_ID`     | OAuth2 client id of the Discord application (used for member login)                         |
+| `DISCORD_CLIENT_SECRET` | OAuth2 client secret                                                                        |
+| `SESSION_SECRET`        | Signs session cookies; rotating it signs everyone out                                       |
+| `FEED_SECRET`           | Signs personal RSS links; rotating it invalidates every feed link                           |
 
 `wrangler types` generates `worker-configuration.d.ts` from `wrangler.jsonc` plus `.dev.vars`, so
 `pnpm build` needs `.dev.vars` to exist locally — the example file carries the key names for that.
@@ -121,6 +146,8 @@ src/lib/discord.ts       Tiny Discord REST client + budget/rate-limit handling
 src/lib/links.ts         URL extraction & normalization
 src/lib/title.ts         og:title / <title> fetcher (HTMLRewriter)
 src/lib/db.ts            D1 queries
-src/pages/               index, day/[day], past, rss, api/ingest
+src/lib/auth.ts          Discord login, signed sessions/feed keys, membership re-checks
+src/middleware.ts        Members-only gate for every page except /auth/*, /api/ingest, /rss
+src/pages/               index, day/[day], past, feed, rss, auth/login, auth/callback, api/ingest
 migrations/              D1 schema
 ```
